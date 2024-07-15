@@ -1,6 +1,7 @@
 ## 1.2.0 (July 2024)
 
 - Strips out Markdown links from task name and provides URLs in task notes
+- Use OmniFocus date shortcuts in due dates (e.g. "today")
 
 ## 1.1.0 (July 2024)
 

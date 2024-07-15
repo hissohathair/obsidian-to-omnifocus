@@ -1,14 +1,5 @@
-import {
-	MarkdownView,
-	Plugin,
-	Editor,
-} from "obsidian";
-
-import {
-	TasksToOmnifocusSettings,
-	DEFAULT_SETTINGS,
-	TasksToOmnifocusSettingTab,
-} from "./settings";
+import { MarkdownView, Plugin, Editor } from "obsidian";
+import { TasksToOmnifocusSettings, DEFAULT_SETTINGS, TasksToOmnifocusSettingTab } from "./settings";
 
 const TASK_REGEX = /[-*] \[ \] .*/g;
 const DATE_REGEX = /(\/\/\s*)((\d{4}-\d{2}-\d{2})|(today|tomorrow|(next|last)?\s\w+|\w+))\s?/i;
