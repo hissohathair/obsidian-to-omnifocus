@@ -12,7 +12,7 @@ import {
 
 const TASK_REGEX = /[-*] \[ \] .*/g;
 const DATE_REGEX = /(\/\/\s*)((\d{4}-\d{2}-\d{2})|(today|tomorrow|(next|last)?\s\w+|\w+))\s?/i;
-const MARKDOWN_LINK_REGEX = /\[([^\]]*)\]\(([^)]*)\)/g;
+const MARKDOWN_LINK_REGEX = /\[([^\]]+)\]\(([^)]+)\)/g;
 const WIKILINK_REGEX = /\[\[([^\]]+)\]\]/g;
 
 export default class TasksToOmnifocus extends Plugin {
@@ -65,11 +65,14 @@ export default class TasksToOmnifocus extends Plugin {
 				// Handle Markdown links
 				const markdownLinks = taskName.match(MARKDOWN_LINK_REGEX);
 				if (markdownLinks) {
+					console.log(`obsidian-omnifocus: Found Markdown links. ${markdownLinks}`);
 					taskName = taskName.replace(MARKDOWN_LINK_REGEX, "$1");
 					taskNote += "\n\n" + this.buildTaskNoteFromLinks(markdownLinks);
+					console.log(`obsidian-omnifocus: Handled Markdown link. Task Note = ${taskNote}`);
 				}
 
 				// Handle WikiLinks
+				// TODO: [BUG] - The scheme, "://" and first part of the hostname are being stripped from the URL
 				const wikiLinks = taskName.match(WIKILINK_REGEX);
 				if (wikiLinks) {
 					taskNote += "\n\n";
@@ -79,9 +82,9 @@ export default class TasksToOmnifocus extends Plugin {
 				const taskNameEncoded = encodeURIComponent(taskName);
 				const taskNoteEncoded = encodeURIComponent(taskNote);
 
-				window.open(
-					`omnifocus:///add?name=${taskNameEncoded}&note=${taskNoteEncoded}&due=${taskDate}`
-				);
+				const omnifocusURL = `omnifocus:///add?name=${taskNameEncoded}&note=${taskNoteEncoded}&due=${taskDate}`;
+				console.log(`obsidian-omnifocus: OmniFocus URL = ${omnifocusURL}`);
+				window.open(omnifocusURL);
 			}
 
 			if (this.settings.markComplete) {
