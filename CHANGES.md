@@ -1,6 +1,8 @@
 ## 1.2.0 (July 2024)
 
 - Strips out Markdown links from task name and provides URLs in task notes
+- Strips out WikiLinks from task name and adds link back to Obsidian in notes
+- Set a due date using OmniFocus short codes (e.g. "today")
 
 ## 1.1.0 (July 2024)
 

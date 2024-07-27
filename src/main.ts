@@ -1,154 +1,91 @@
+import { MarkdownView, Plugin, Editor } from "obsidian";
 import {
-	MarkdownView,
-	Plugin,
-	Editor,
-} from "obsidian";
-
-import {
-	TasksToOmnifocusSettings,
-	DEFAULT_SETTINGS,
-	TasksToOmnifocusSettingTab,
+  DEFAULT_SETTINGS,
+  TasksToOmnifocusSettings,
+  TasksToOmnifocusSettingTab,
 } from "./settings";
 
-const TASK_REGEX = /[-*] \[ \] .*/g;
-const DATE_REGEX = /(\/\/\s*)((\d{4}-\d{2}-\d{2})|(today|tomorrow|(next|last)?\s\w+|\w+))\s?/i;
-const MARKDOWN_LINK_REGEX = /\[([^\]]+)\]\(([^)]+)\)/g;
-const WIKILINK_REGEX = /\[\[([^\]]+)\]\]/g;
+import { processTasks } from "./rules";
+
+const TASK_REGEX = /([-*]) \[ \] (.*)/g;
 
 export default class TasksToOmnifocus extends Plugin {
-	settings: TasksToOmnifocusSettings;
+  settings: TasksToOmnifocusSettings;
 
-	async onload() {
-		await this.loadSettings();
+  async onload() {
+    await this.loadSettings();
 
-		this.addCommand({
-			id: 'extract-tasks',
-			name: 'Extract Tasks Into OmniFocus',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				this.addToOmnifocus(false, editor, view);
-			},
-		});
+    this.addCommand({
+      id: "extract-tasks",
+      name: "Extract Tasks Into OmniFocus",
+      editorCallback: (editor: Editor, view: MarkdownView) => {
+        this.addToOmnifocus(false, editor, view);
+      },
+    });
 
-		this.addCommand({
-			id: 'extract-tasks-selection',
-			name: 'Extract Tasks from selection Into OmniFocus',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				this.addToOmnifocus(true, editor, view);
-			},
-		});
+    this.addCommand({
+      id: "extract-tasks-selection",
+      name: "Extract Tasks from selection Into OmniFocus",
+      editorCallback: (editor: Editor, view: MarkdownView) => {
+        this.addToOmnifocus(true, editor, view);
+      },
+    });
 
-		this.addSettingTab(new TasksToOmnifocusSettingTab(this.app, this));
-	}
+    this.addSettingTab(new TasksToOmnifocusSettingTab(this.app, this));
+  }
 
-	async addToOmnifocus(isSelection: boolean, editor: Editor, view: MarkdownView) {
-		let editorText: string;
-		if (isSelection) {
-			editorText = editor.getSelection();
-		} else {
-			editorText = editor.getValue();
-		}
+  async addToOmnifocus(
+    isSelection: boolean,
+    editor: Editor,
+    view: MarkdownView
+  ) {
+    let editorText: string;
+    if (isSelection) {
+      editorText = editor.getSelection();
+    } else {
+      editorText = editor.getValue();
+    }
 
-		try {
-			const tasks = editorText.match(TASK_REGEX);
+    try {
+      const matches = editorText.matchAll(TASK_REGEX);
+      const tasks = [];
+      for (const match of matches) {
+        tasks.push(match[2]); // Extract task details without prefix
+      }
+      if (tasks.length === 0) {
+        console.warn("No tasks found in the selected text.");
+        return;
+      }
 
-			if (!tasks) {
-				console.warn('No tasks found in the selected text.');
-				return;
-			}
+      const fileURL = encodeURIComponent(view.file.path);
+      const vaultName = encodeURIComponent(this.app.vault.getName());
+      const baseNote = `obsidian://open?vault=${vaultName}&file=${fileURL}\n\n`;
 
-			for (const task of tasks) {
-				// eslint-disable-next-line prefer-const
-				let { taskName, taskDate } = this.extractTaskNameAndDate(task);
-				const obsidianURL = this.buildObsidianURL(view);
-				let taskNote = obsidianURL;
+      const omnifocusURLs = processTasks(tasks, baseNote, view);
+      omnifocusURLs.forEach((url) => {
+        window.open(url);
+      });
 
-				// Handle Markdown links
-				const markdownLinks = taskName.match(MARKDOWN_LINK_REGEX);
-				if (markdownLinks) {
-					console.log(`obsidian-omnifocus: Found Markdown links. ${markdownLinks}`);
-					taskName = taskName.replace(MARKDOWN_LINK_REGEX, "$1");
-					taskNote += "\n\n" + this.buildTaskNoteFromLinks(markdownLinks);
-					console.log(`obsidian-omnifocus: Handled Markdown link. Task Note = ${taskNote}`);
-				}
+      if (this.settings.markComplete) {
+        const completedText = editorText.replace(TASK_REGEX, "$1 [x] $2");
+        if (isSelection) {
+          editor.replaceSelection(completedText);
+        } else {
+          editor.setValue(completedText);
+        }
+      }
+    } catch (err) {
+      console.error("Error extracting tasks", err);
+    }
+  }
 
-				// Handle WikiLinks
-				// TODO: [BUG] - The scheme, "://" and first part of the hostname are being stripped from the URL
-				const wikiLinks = taskName.match(WIKILINK_REGEX);
-				if (wikiLinks) {
-					taskNote += "\n\n";
-					({ taskName, taskNote } = await this.handleWikiLinks(taskName, wikiLinks, taskNote));
-				}
+  async saveSettings() {
+    await this.saveData(this.settings);
+  }
 
-				const taskNameEncoded = encodeURIComponent(taskName);
-				const taskNoteEncoded = encodeURIComponent(taskNote);
+  onunload() {}
 
-				const omnifocusURL = `omnifocus:///add?name=${taskNameEncoded}&note=${taskNoteEncoded}&due=${taskDate}`;
-				console.log(`obsidian-omnifocus: OmniFocus URL = ${omnifocusURL}`);
-				window.open(omnifocusURL);
-			}
-
-			if (this.settings.markComplete) {
-				const completedText = editorText.replace(/([-*]) \[ \]/g, "$1 [x]");
-				if (isSelection) {
-					editor.replaceSelection(completedText);
-				} else {
-					editor.setValue(completedText);
-				}
-			}
-
-		} catch (err) {
-			console.error('Error extracting tasks', err);
-		}
-	}
-
-	async handleWikiLinks(taskName: string, wikiLinks: string[], taskNote: string): Promise<{ taskName: string, taskNote: string }> {
-		for (const link of wikiLinks) {
-			const match = link.match(/\[\[([^\]|]+)(\|([^\]]+))?\]\]/);
-			if (match) {
-				const fileName = match[1];
-				const alias = match[3] || fileName;
-				const fileURL = encodeURIComponent(`${fileName}.md`);
-				const vaultName = encodeURIComponent(this.app.vault.getName());
-				const obsidianURL = `obsidian://open?vault=${vaultName}&file=${fileURL}`;
-				taskNote += `${alias}: ${obsidianURL}\n`;
-				taskName = taskName.replace(link, alias);
-			}
-		}
-		return { taskName, taskNote };
-	}
-
-	extractTaskNameAndDate(task: string): { taskName: string, taskDate: string } {
-		let taskName = task.replace(/[-*] \[ \] /, "");
-		const dateMatch = taskName.match(DATE_REGEX);
-		let taskDate = "";
-		if (dateMatch) {
-			taskDate = dateMatch[2];
-			taskName = taskName.replace(dateMatch[0], "");
-		}
-		return { taskName, taskDate };
-	}
-
-	buildObsidianURL(view: MarkdownView): string {
-		const fileURL = encodeURIComponent(view.file.path);
-		const vaultName = encodeURIComponent(this.app.vault.getName());
-		return `obsidian://open?vault=${vaultName}&file=${fileURL}`;
-	}
-
-	buildTaskNoteFromLinks(links: string[]): string {
-		return links.map(link => link.replace(MARKDOWN_LINK_REGEX, "$1: $2")).join("\n");
-	}
-
-	async saveSettings() {
-		await this.saveData(this.settings);
-	}
-
-	onunload() { }
-
-	private async loadSettings() {
-		this.settings = Object.assign(
-			{},
-			DEFAULT_SETTINGS,
-			await this.loadData()
-		);
-	}
+  private async loadSettings() {
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+  }
 }
