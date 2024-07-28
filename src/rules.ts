@@ -4,6 +4,7 @@ interface TaskFields {
   name: string;
   note: string;
   due: string;
+  [key: string]: string; // Add index signature
 }
 
 type HandlerFunction = (
@@ -21,6 +22,8 @@ const DATE_REGEX = /([/]{2}\s*)(\d{4}[-/]\d{2}[-/]\d{2})\s?/g;
 const SHORT_DATE_REGEX = /([/]{2}\s*)(((next|last)\s)?\w+)\s?/gi;
 const MARKDOWN_LINK_REGEX = /\[([^\]]+)\]\(([^)]+)\)/g;
 const WIKILINK_REGEX = /\[\[([^\]]+)\]\]/g;
+const DATAVIEW_META_REGEX = /(\s?\[(\w+)::\s*([^\]]+)\])/g;
+const TAGS_REGEX = /(\s?#(\w+))/g;
 
 const regexRules: RegexRule[] = [
   // First rule is to make markdown links plain text in the task name,
@@ -73,6 +76,37 @@ const regexRules: RegexRule[] = [
     handler: (match, taskFields) => {
       taskFields.due = match[2];
       taskFields.name = taskFields.name.replace(match[1], "");
+      return taskFields;
+    },
+  },
+
+  // Process DataView meta data. These are in the format [key:: value].
+  // We remove the meta data from task name and add it as a field. Expect to
+  // have only 1 value (a string) per meta data field.
+  {
+    regex: DATAVIEW_META_REGEX,
+    handler: (match, taskFields) => {
+      if (match.length >= 4 && match[2] && match[3]) {
+        taskFields[match[2]] = match[3];
+      }
+      taskFields.name = taskFields.name.replace(match[0], "");
+      return taskFields;
+    },
+  },
+
+  // Process tags. These are in the format #tag. Tags become Contexts in OmniFocus.
+  // Expect zero or more tags.
+  {
+    regex: TAGS_REGEX,
+    handler: (match, taskFields) => {
+      if (match.length >= 3 && match[2]) {
+        if (taskFields.context) {
+          taskFields.context += "," + match[2];
+        } else {
+          taskFields.context = match[2];
+        }
+      }
+      taskFields.name = taskFields.name.replace(match[0], "");
       return taskFields;
     },
   },
