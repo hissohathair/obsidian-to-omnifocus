@@ -48,9 +48,9 @@ export default class TasksToOmnifocus extends Plugin {
 
     try {
       const matches = editorText.matchAll(TASK_REGEX);
-      const tasks = [];
+      const tasks: string[] = [];
       for (const match of matches) {
-        tasks.push(match[2]); // Extract task details without prefix
+        tasks.push(match[2]); // Extract task details without prefix ("- [ ]")
       }
       if (tasks.length === 0) {
         console.warn("No tasks found in the selected text.");
@@ -63,6 +63,7 @@ export default class TasksToOmnifocus extends Plugin {
 
       const omnifocusURLs = processTasks(tasks, baseNote, view);
       omnifocusURLs.forEach((url) => {
+        console.log(`Opening URL: ${url}`); // Log the URL for debugging
         window.open(url);
       });
 
