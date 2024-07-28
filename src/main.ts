@@ -63,7 +63,7 @@ export default class TasksToOmnifocus extends Plugin {
 
       const omnifocusURLs = processTasks(tasks, baseNote, view);
       omnifocusURLs.forEach((url) => {
-        console.log(`Opening URL: ${url}`); // Log the URL for debugging
+        console.debug(`Opening URL: ${url}`);
         window.open(url);
       });
 
