@@ -1,4 +1,4 @@
-import { MarkdownView, Plugin, Editor } from "obsidian";
+import { MarkdownView, Plugin, Editor, Notice } from "obsidian";
 import {
   DEFAULT_SETTINGS,
   TasksToOmnifocusSettings,
@@ -54,6 +54,7 @@ export default class TasksToOmnifocus extends Plugin {
       }
       if (tasks.length === 0) {
         console.warn("No tasks found in the selected text.");
+        new Notice("No tasks found in the selected text.");
         return;
       }
 
