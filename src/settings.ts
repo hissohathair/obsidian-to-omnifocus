@@ -7,7 +7,6 @@ export interface TasksToOmnifocusSettings {
 
 export const DEFAULT_SETTINGS: TasksToOmnifocusSettings = {
 	markComplete: true,
-
 };
 
 export class TasksToOmnifocusSettingTab extends PluginSettingTab {

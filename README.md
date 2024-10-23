@@ -24,6 +24,7 @@ This plugin will extract tasks from the current note open in Obsidian and create
 - [x] This task will not (already checked)
 * [ ] This task will be sent to OmniFocus
 - [ ] This task is due 1 Feb // 2025-02-01
+- [ ] This task is due // today
 ```
 
 ## Support

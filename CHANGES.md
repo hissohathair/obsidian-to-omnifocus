@@ -1,7 +1,13 @@
-## 1.2.0 (July 2024)
+## 1.3.0 (August 2024)
+
+- Pass DataView meta fields in tasks to OmniFocus. For example `[due:: 2022-09-09]` or `[context:: Work]`. See list of valid fields [here](https://inside.omnifocus.com/url-schemes)
+- Pass tags as OmniFocus context (e.g. `#Work`)
+
+## 1.2.1 (July 2024)
 
 - Strips out Markdown links from task name and provides URLs in task notes
-- Use OmniFocus date shortcuts in due dates (e.g. "today")
+- Strips out WikiLinks from task name and adds link back to Obsidian in notes
+- Set a due date using OmniFocus short codes (e.g. "today")
 
 ## 1.1.0 (July 2024)
 
