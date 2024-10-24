@@ -1,3 +1,7 @@
+## 1.4.0 (October 2024)
+
+- If there are nested bullet points under a task, include them in the Notes field for the OmniFocus task
+
 ## 1.3.0 (August 2024)
 
 - Pass DataView meta fields in tasks to OmniFocus. For example `[due:: 2022-09-09]` or `[context:: Work]`. See list of valid fields [here](https://inside.omnifocus.com/url-schemes)

@@ -7,7 +7,15 @@ import {
 
 import { processTasks } from "./rules";
 
-const TASK_REGEX = /([-*]) \[ \] (.*)/g;
+// A task is recognised by (numbers indicate capture groups):
+//   - (1) zero or more spaces at the start of a line, followed by
+//   - (2) a bullet point (- or *), followed by
+//   - one or more spaces, followed by
+//   - a checkbox [ ] (containing exactly 1 space), followed by
+//   - one or more spaces, followed by
+//   - (3) zero or more non-space characters to the end of the line
+//const TASK_REGEX = /([\s]*)([-*])[\s]+\[ \]\s+(.*)/g;
+const TASK_REGEX = /^([ \t]*)([-*])\s+\[ \]\s+(.*)(\n(?:\1[ \t].*)*)?$/gm;
 
 export default class TasksToOmnifocus extends Plugin {
   settings: TasksToOmnifocusSettings;
@@ -50,7 +58,12 @@ export default class TasksToOmnifocus extends Plugin {
       const matches = editorText.matchAll(TASK_REGEX);
       const tasks: string[] = [];
       for (const match of matches) {
-        tasks.push(match[2]); // Extract task details without prefix ("- [ ]")
+        const taskText = match[3];
+        console.debug(`Found matching task: ${taskText}`, match);
+        if (match[4]) {
+          console.debug("Found subtasks:", match[4]);
+        }
+        tasks.push(taskText.trim());
       }
       if (tasks.length === 0) {
         console.warn("No tasks found in the selected text.");
@@ -69,7 +82,7 @@ export default class TasksToOmnifocus extends Plugin {
       });
 
       if (this.settings.markComplete) {
-        const completedText = editorText.replace(TASK_REGEX, "$1 [x] $2");
+        const completedText = editorText.replace(TASK_REGEX, "$1$2 [x] $3$4");
         if (isSelection) {
           editor.replaceSelection(completedText);
         } else {
