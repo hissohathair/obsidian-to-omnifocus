@@ -23,7 +23,7 @@ const SHORT_DATE_REGEX = /([/]{2}\s*)(((next|last)\s)?\w+)\s?/gi;
 const MARKDOWN_LINK_REGEX = /\[([^\]]+)\]\(([^)]+)\)/g;
 const WIKILINK_REGEX = /\[\[([^\]]+)\]\]/g;
 const DATAVIEW_META_REGEX = /(\s?\[(\w+)::\s*([^\]]+)\])/g;
-const TAGS_REGEX = /(\s?#(\w+))/g;
+const TAGS_REGEX = /(\s?#([a-z]\w*))/gi;
 const NOTES_REGEX = /^(.*?)\r?\n(.*)$/g;
 
 // Note: The order the rules are applied is important.
@@ -150,9 +150,10 @@ export function processTasks(
   view: MarkdownView
 ): string[] {
   return tasks.map((task) => {
+    const taskUnits = task.split(String.fromCharCode(31));
     let taskFields: TaskFields = {
-      name: task,
-      note: baseNote,
+      name: taskUnits[0],
+      note: baseNote + (taskUnits.length > 1 ? taskUnits[1] : ""),
       due: "",
     };
 

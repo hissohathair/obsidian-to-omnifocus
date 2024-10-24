@@ -13,9 +13,13 @@ import { processTasks } from "./rules";
 //   - one or more spaces, followed by
 //   - a checkbox [ ] (containing exactly 1 space), followed by
 //   - one or more spaces, followed by
-//   - (3) zero or more non-space characters to the end of the line
-//const TASK_REGEX = /([\s]*)([-*])[\s]+\[ \]\s+(.*)/g;
-const TASK_REGEX = /^([ \t]*)([-*])\s+\[ \]\s+(.*)(\n(?:\1[ \t].*)*)?$/gm;
+//   - (3) zero or more non-space characters to the end of the line,
+//   - (4) followed by zero or more lines starting with the same number of spaces as the first line,
+//     plus at least one extra space, followed by a bullet point and text to the end of the line.
+//     Repeats until the indentation level returns to the original level, or the end of the text.
+// https://regex101.com/r/BI6S5W/1
+const TASK_REGEX =
+  /^([ \t]*)([-*])\s+\[ \]\s+(.*)([\n]+(?:\1[ \t]+[-*].*[\n\r]*)*)?/gm;
 
 export default class TasksToOmnifocus extends Plugin {
   settings: TasksToOmnifocusSettings;
@@ -58,10 +62,9 @@ export default class TasksToOmnifocus extends Plugin {
       const matches = editorText.matchAll(TASK_REGEX);
       const tasks: string[] = [];
       for (const match of matches) {
-        const taskText = match[3];
-        console.debug(`Found matching task: ${taskText}`, match);
+        let taskText = match[3];
         if (match[4]) {
-          console.debug("Found subtasks:", match[4]);
+          taskText += String.fromCharCode(31) + match[4];
         }
         tasks.push(taskText.trim());
       }
@@ -73,7 +76,7 @@ export default class TasksToOmnifocus extends Plugin {
 
       const fileURL = encodeURIComponent(view.file.path);
       const vaultName = encodeURIComponent(this.app.vault.getName());
-      const baseNote = `obsidian://open?vault=${vaultName}&file=${fileURL}\n\n`;
+      const baseNote = `obsidian://open?vault=${vaultName}&file=${fileURL}\n`;
 
       const omnifocusURLs = processTasks(tasks, baseNote, view);
       omnifocusURLs.forEach((url) => {
