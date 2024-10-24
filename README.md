@@ -22,9 +22,12 @@ This plugin will extract tasks from the current note open in Obsidian and create
 ```markdown
 - [ ] This task will be sent to OmniFocus
 - [x] This task will not (already checked)
-* [ ] This task will be sent to OmniFocus
+* [ ] This task with "*" will be sent to OmniFocus
 - [ ] This task is due 1 Feb // 2025-02-01
 - [ ] This task is due // today
+- [ ] This task will be created with the 2 notes nested below
+    - This is the first bullet point
+    - This is the second
 ```
 
 ## Support

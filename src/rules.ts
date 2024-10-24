@@ -23,10 +23,23 @@ const SHORT_DATE_REGEX = /([/]{2}\s*)(((next|last)\s)?\w+)\s?/gi;
 const MARKDOWN_LINK_REGEX = /\[([^\]]+)\]\(([^)]+)\)/g;
 const WIKILINK_REGEX = /\[\[([^\]]+)\]\]/g;
 const DATAVIEW_META_REGEX = /(\s?\[(\w+)::\s*([^\]]+)\])/g;
-const TAGS_REGEX = /(\s?#(\w+))/g;
+const TAGS_REGEX = /(\s?#([a-z]\w*))/gi;
+const NOTES_REGEX = /^(.*?)\r?\n(.*)$/g;
 
+// Note: The order the rules are applied is important.
 const regexRules: RegexRule[] = [
-  // First rule is to make markdown links plain text in the task name,
+  // First, we split the task name from the note. The note is everything after the
+  // first line of the task, and we assume that the first line is the task name.
+  {
+    regex: NOTES_REGEX,
+    handler: (match, taskFields) => {
+      taskFields.name = match[1].trim();
+      taskFields.note += match[2].trim() ? `\n${match[2].trim()}` : "";
+      return taskFields;
+    },
+  },
+
+  // Next rule is to make markdown links plain text in the task name,
   // and add the link URL to the task note.
   {
     regex: MARKDOWN_LINK_REGEX,
@@ -57,7 +70,7 @@ const regexRules: RegexRule[] = [
     },
   },
 
-  // Finally, we process due dates. We have two rules for this. The first
+  // Next, we process due dates. We have two rules for this. The first
   // one is for dates in the format YYYY-MM-DD...
   {
     regex: DATE_REGEX,
@@ -94,8 +107,8 @@ const regexRules: RegexRule[] = [
     },
   },
 
-  // Process tags. These are in the format #tag. Tags become Contexts in OmniFocus.
-  // Expect zero or more tags.
+  // Process tags last. These are in the format #tag. Tags become Contexts in
+  // OmniFocus. Expect zero or more tags.
   {
     regex: TAGS_REGEX,
     handler: (match, taskFields) => {
@@ -137,9 +150,10 @@ export function processTasks(
   view: MarkdownView
 ): string[] {
   return tasks.map((task) => {
+    const taskUnits = task.split(String.fromCharCode(31));
     let taskFields: TaskFields = {
-      name: task,
-      note: baseNote,
+      name: taskUnits[0],
+      note: baseNote + (taskUnits.length > 1 ? taskUnits[1] : ""),
       due: "",
     };
 
@@ -149,7 +163,7 @@ export function processTasks(
 
     // For each object in `taskFields`, we want to encode the values
     // and concatenate them into a URL string.
-    const encodedUrl = 'omnifocus:///add?' + encodeTaskFields(taskFields);
+    const encodedUrl = "omnifocus:///add?" + encodeTaskFields(taskFields);
     return encodedUrl;
   });
 }

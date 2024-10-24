@@ -7,7 +7,19 @@ import {
 
 import { processTasks } from "./rules";
 
-const TASK_REGEX = /([-*]) \[ \] (.*)/g;
+// A task is recognised by (numbers indicate capture groups):
+//   - (1) zero or more spaces at the start of a line, followed by
+//   - (2) a bullet point (- or *), followed by
+//   - one or more spaces, followed by
+//   - a checkbox [ ] (containing exactly 1 space), followed by
+//   - one or more spaces, followed by
+//   - (3) zero or more non-space characters to the end of the line,
+//   - (4) followed by zero or more lines starting with the same number of spaces as the first line,
+//     plus at least one extra space, followed by a bullet point and text to the end of the line.
+//     Repeats until the indentation level returns to the original level, or the end of the text.
+// https://regex101.com/r/BI6S5W/1
+const TASK_REGEX =
+  /^([ \t]*)([-*])\s+\[ \]\s+(.*)([\n]+(?:\1[ \t]+[-*].*[\n\r]*)*)?/gm;
 
 export default class TasksToOmnifocus extends Plugin {
   settings: TasksToOmnifocusSettings;
@@ -50,7 +62,11 @@ export default class TasksToOmnifocus extends Plugin {
       const matches = editorText.matchAll(TASK_REGEX);
       const tasks: string[] = [];
       for (const match of matches) {
-        tasks.push(match[2]); // Extract task details without prefix ("- [ ]")
+        let taskText = match[3];
+        if (match[4]) {
+          taskText += String.fromCharCode(31) + match[4];
+        }
+        tasks.push(taskText.trim());
       }
       if (tasks.length === 0) {
         console.warn("No tasks found in the selected text.");
@@ -60,7 +76,7 @@ export default class TasksToOmnifocus extends Plugin {
 
       const fileURL = encodeURIComponent(view.file.path);
       const vaultName = encodeURIComponent(this.app.vault.getName());
-      const baseNote = `obsidian://open?vault=${vaultName}&file=${fileURL}\n\n`;
+      const baseNote = `obsidian://open?vault=${vaultName}&file=${fileURL}\n`;
 
       const omnifocusURLs = processTasks(tasks, baseNote, view);
       omnifocusURLs.forEach((url) => {
@@ -69,7 +85,7 @@ export default class TasksToOmnifocus extends Plugin {
       });
 
       if (this.settings.markComplete) {
-        const completedText = editorText.replace(TASK_REGEX, "$1 [x] $2");
+        const completedText = editorText.replace(TASK_REGEX, "$1$2 [x] $3$4");
         if (isSelection) {
           editor.replaceSelection(completedText);
         } else {

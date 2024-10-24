@@ -1,6 +1,6 @@
 {
   "name": "obsidian-note-content-pusher",
-  "version": "1.0",
+  "version": "1.4.0",
   "description": "An Obsidian plugin to automatically create notes with some specified content when you link to a note that doesn't yet exist.",
   "main": "main.js",
   "scripts": {
