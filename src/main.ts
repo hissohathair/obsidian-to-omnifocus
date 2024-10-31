@@ -9,17 +9,17 @@ import { processTasks } from "./rules";
 
 // A task is recognised by (numbers indicate capture groups):
 //   - (1) zero or more spaces at the start of a line, followed by
-//   - (2) a bullet point (- or *), followed by
-//   - one or more spaces, followed by
-//   - a checkbox [ ] (containing exactly 1 space), followed by
-//   - one or more spaces, followed by
+//   - (2) a bullet point (- or *), then
+//   - one or more spaces,
+//   - a checkbox [ ] (containing exactly 1 space),
+//   - one or more spaces,
 //   - (3) zero or more non-space characters to the end of the line,
-//   - (4) followed by zero or more lines starting with the same number of spaces as the first line,
+//   - (4) optionally followed by zero or more lines starting with the same number of spaces as the first line,
 //     plus at least one extra space, followed by a bullet point and text to the end of the line.
 //     Repeats until the indentation level returns to the original level, or the end of the text.
 // https://regex101.com/r/BI6S5W/1
 const TASK_REGEX =
-  /^([ \t]*)([-*])\s+\[ \]\s+(.*)([\n]+(?:\1[ \t]+[-*].*[\n\r]*)*)?/gm;
+  /^([ \t]*)([-*])\s+\[ \]\s+(.*)([\n]+(?:\1[ \t]+[-*]\s+[^[].*[\n\r]*)*)?/gm;
 
 export default class TasksToOmnifocus extends Plugin {
   settings: TasksToOmnifocusSettings;
@@ -64,7 +64,9 @@ export default class TasksToOmnifocus extends Plugin {
       for (const match of matches) {
         let taskText = match[3];
         if (match[4]) {
-          taskText += String.fromCharCode(31) + match[4];
+          const noteRegex = new RegExp(`^${match[1]}[ \t]{1}`, "gm");
+          const taskNote = match[4].replace(noteRegex, "");
+          taskText += String.fromCharCode(31) + taskNote;
         }
         tasks.push(taskText.trim());
       }

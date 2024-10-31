@@ -24,22 +24,10 @@ const MARKDOWN_LINK_REGEX = /\[([^\]]+)\]\(([^)]+)\)/g;
 const WIKILINK_REGEX = /\[\[([^\]]+)\]\]/g;
 const DATAVIEW_META_REGEX = /(\s?\[(\w+)::\s*([^\]]+)\])/g;
 const TAGS_REGEX = /(\s?#([a-z]\w*))/gi;
-const NOTES_REGEX = /^(.*?)\r?\n(.*)$/g;
 
 // Note: The order the rules are applied is important.
 const regexRules: RegexRule[] = [
-  // First, we split the task name from the note. The note is everything after the
-  // first line of the task, and we assume that the first line is the task name.
-  {
-    regex: NOTES_REGEX,
-    handler: (match, taskFields) => {
-      taskFields.name = match[1].trim();
-      taskFields.note += match[2].trim() ? `\n${match[2].trim()}` : "";
-      return taskFields;
-    },
-  },
-
-  // Next rule is to make markdown links plain text in the task name,
+  // First rule is to make markdown links plain text in the task name,
   // and add the link URL to the task note.
   {
     regex: MARKDOWN_LINK_REGEX,
@@ -144,6 +132,12 @@ function encodeTaskFields(taskFields: TaskFields): string {
     .join("&");
 }
 
+function cleanTaskNoteText(note: string): string {
+  // Convert Markdown links to plain text
+  note = note.replace(MARKDOWN_LINK_REGEX, "$1 <$2>");
+  return note.trim();
+}
+
 export function processTasks(
   tasks: string[],
   baseNote: string,
@@ -160,6 +154,7 @@ export function processTasks(
     for (const rule of regexRules) {
       taskFields = applyRegexRule(taskFields, rule.regex, rule.handler, view);
     }
+    taskFields.note = cleanTaskNoteText(taskFields.note);
 
     // For each object in `taskFields`, we want to encode the values
     // and concatenate them into a URL string.
