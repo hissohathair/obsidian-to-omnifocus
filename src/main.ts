@@ -17,7 +17,7 @@ import { processTasks } from "./rules";
 //   - (4) optionally followed by zero or more lines starting with the same number of spaces as the first line,
 //     plus at least one extra space, followed by a bullet point and text to the end of the line.
 //     Repeats until the indentation level returns to the original level, or the end of the text.
-// https://regex101.com/r/BI6S5W/1
+// https://regex101.com/r/BI6S5W/2
 const TASK_REGEX =
   /^([ \t]*)([-*])\s+\[ \]\s+(.*)([\n]+(?:\1[ \t]+[-*]\s+[^[].*[\n\r]*)*)?/gm;
 
