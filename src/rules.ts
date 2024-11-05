@@ -132,10 +132,10 @@ function encodeTaskFields(taskFields: TaskFields): string {
     .join("&");
 }
 
-function cleanTaskNoteText(note: string): string {
+function cleanTaskNoteText(note: string, baseNote: string): string {
   // Convert Markdown links to plain text
   note = note.replace(MARKDOWN_LINK_REGEX, "$1 <$2>");
-  return note.trim();
+  return note.trim() + "\n\n" + baseNote;
 }
 
 export function processTasks(
@@ -147,14 +147,14 @@ export function processTasks(
     const taskUnits = task.split(String.fromCharCode(31));
     let taskFields: TaskFields = {
       name: taskUnits[0],
-      note: baseNote + (taskUnits.length > 1 ? taskUnits[1] : ""),
+      note: taskUnits.length > 1 ? taskUnits[1].trimEnd() + "\n\n" : "",
       due: "",
     };
 
     for (const rule of regexRules) {
       taskFields = applyRegexRule(taskFields, rule.regex, rule.handler, view);
     }
-    taskFields.note = cleanTaskNoteText(taskFields.note);
+    taskFields.note = cleanTaskNoteText(taskFields.note, baseNote);
 
     // For each object in `taskFields`, we want to encode the values
     // and concatenate them into a URL string.
