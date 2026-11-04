@@ -80,6 +80,11 @@ export default class TasksToOmnifocus extends Plugin {
         return;
       }
 
+      if (!view.file) {
+        new Notice("No active file.");
+        return;
+      }
+
       const fileURL = encodeURIComponent(view.file.path);
       const vaultName = encodeURIComponent(this.app.vault.getName());
       const baseNote = `obsidian://open?vault=${vaultName}&file=${fileURL}\n`;
