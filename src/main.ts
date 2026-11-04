@@ -1,4 +1,4 @@
-import { MarkdownView, Plugin, Editor, Notice } from "obsidian";
+import { MarkdownView, MarkdownFileInfo, Plugin, Editor, Notice } from "obsidian";
 import {
   DEFAULT_SETTINGS,
   TasksToOmnifocusSettings,
@@ -22,7 +22,7 @@ const TASK_REGEX =
   /^([ \t]*)([-*])\s+\[ \]\s+(.*)([\n]+(?:\1[ \t]+[-*]\s+[^[].*[\n\r]*)*)?/gm;
 
 export default class TasksToOmnifocus extends Plugin {
-  settings: TasksToOmnifocusSettings;
+  settings!: TasksToOmnifocusSettings;
 
   async onload() {
     await this.loadSettings();
@@ -30,16 +30,20 @@ export default class TasksToOmnifocus extends Plugin {
     this.addCommand({
       id: "extract-tasks",
       name: "Extract Tasks Into OmniFocus",
-      editorCallback: (editor: Editor, view: MarkdownView) => {
-        this.addToOmnifocus(false, editor, view);
+      editorCallback: (editor: Editor, ctx: MarkdownFileInfo) => {
+        if (ctx instanceof MarkdownView) {
+          this.addToOmnifocus(false, editor, ctx);
+        }
       },
     });
 
     this.addCommand({
       id: "extract-tasks-selection",
       name: "Extract Tasks from selection Into OmniFocus",
-      editorCallback: (editor: Editor, view: MarkdownView) => {
-        this.addToOmnifocus(true, editor, view);
+      editorCallback: (editor: Editor, ctx: MarkdownFileInfo) => {
+        if (ctx instanceof MarkdownView) {
+          this.addToOmnifocus(true, editor, ctx);
+        }
       },
     });
 
