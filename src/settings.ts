@@ -11,7 +11,7 @@ export const DEFAULT_SETTINGS: TasksToOmnifocusSettings = {
 
 export class TasksToOmnifocusSettingTab extends PluginSettingTab {
 	plugin: ListModified;
-	tagString: string;
+	tagString!: string;
 
 	constructor(app: App, plugin: ListModified) {
 		super(app, plugin);
